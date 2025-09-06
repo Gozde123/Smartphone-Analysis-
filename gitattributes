@@ -1,0 +1,9 @@
+# Python dosyalarını zorla Python olarak işaretle
+*.py linguist-language=Python
+
+# R dosyalarını zorla R olarak işaretle
+*.R linguist-language=R
+*.r linguist-language=R
+
+# Jupyter Notebook dosyalarını zorla Jupyter Notebook olarak işaretle
+*.ipynb linguist-language=Jupyter Notebook
