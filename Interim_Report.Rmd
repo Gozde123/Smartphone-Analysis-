@@ -1,0 +1,1524 @@
+---
+title: "Interim_Report"
+author: "Gözde Nur Özdemir"
+date: "2025-05-09"
+output:
+  html_document: default
+  pdf_document: default
+editor_options:
+  markdown:
+    wrap: sentence
+---
+
+# Smarthphone Dataset
+
+This dataset is taken from [Kaggle](https://www.kaggle.com/datasets/muzammilbaloch/smartphone-dataset?select=smartphones.csv).
+It provides various smartphones and their features, such as the number of cores, battery capacity, internal memory, and so on.
+The summary() and the str() commands are used to get more ideas about variables.
+
+## Variables Description
+
+brand_name: The brand name of the phone manufacturer.
+It is character.
+
+model: The specific designation or title of the phone model.
+It is character.
+
+price: The selling price of the mobile phone.
+
+avg_rating: The average score for a phone based on users or reviewers.
+It is numeric.
+
+X5G_or_not: Specifies whether the device is 5G or not.
+(1 = Yes, 0 = No).
+
+processor_brand: The brand that produces the processor chip for the phone.
+It is character.
+
+num_cores: Total number of processor cores.
+It is an integer.
+More cores allow the device to handle more tasks in parallel, improving multitasking and performance.
+
+processor_speed: The speed of the processor, typically measured in GHz.
+It is numeric.
+Generally, processor speed is between 1.8 to 2.5.
+If it is smaller than 1.8, it is bad.
+But, if it is bigger than 2.5, it is a fast, good performance.
+
+battery_capacity: Indicates the power capacity of the battery in milliamp hours (mAh).
+Generally, if it is smaller than 4000 poor battery life.
+If it is bigger than 5000 excellent.
+
+fast_charging_available: Whether the device supports fast charging (1 = Yes, 0 = No).
+
+
+fast_charging: The power of fast charging in watts.
+It is an numeric.
+Generally, if it is smaller than 20 then slow.
+If it is bigger than 66, it is very fast charging.
+
+ram_capacity: The amount of RAM, typically measured in GB.
+It is an integer.
+Generally, it is between 4 to 8.
+If it is smaller than 4 weak for multitasking but if it is bigger than 8 great for multitasking.
+
+internal_memory: It is an integer.
+The internal storage capacity is typically measured in GB.
+Generally, the acceptable range is 64 to 128.
+If it is bigger than 128 then ideal for heavy media.
+
+screen_size: The screen size of the device in inches.
+It is numeric.
+Normally, modern smartphone sizes are between 6 to 7.
+
+refresh_rate: It is integer.
+The screen refresh rate in hertz (Hz).
+The basic rate is 60.
+If it is between 90 to 120 then smooth.
+But if it is bigger than 120, then it is ultra-smooth.
+
+extended_memory_available: Whether additional memory can be added via a memory card (1 = Yes, 0 = No).
+
+
+num_rear_cameras: It is an integer.
+The total number of cameras are positioned on the rear side of the device.
+Commonly it is between 2 to 3.
+
+primary_camera_rear: Resolution of the primary rear camera in megapixels.
+It is numeric.
+Normally, it is between 24 to 64.
+If it is smaller than 24 then low resolution.
+If it is bigger than 64 then high resolution.
+
+primary_camera_front: Resolution of the front (selfie) camera in megapixels.
+Generally, if it is smaller than 8 then poor selfies.
+If it is bigger than 16 then great for selfies.
+
+resolution_height: The height of the resolution of the screen in pixels.
+Normally, smaller than 1600 low resolution.
+If it is bigger than 2400 then good.
+
+resolution_width: The width of resolution of the screen in pixels.
+Normally, if it is smaller than 1080 then low resolution.
+If it is bigger than 1440 then high resolution.
+
+os: The operating system installed on the mobile phone (e.g., Android, iOS, etc.).
+
+# Aim of the Project
+
+The aim of this project is to analyze key features such as refresh rate, extended memory available, 5G, fast charging and so on which are related to price and average rating.
+
+Moreover, the main aim of this project is to investigate whether there is a relationship between selected variables and the availability of extended memory, using a GLM model.
+
+Finally, to evaluate whether RAM capacity and screen size correlate with refresh rate performance examined by using Wilcoxon Rank Sum test.
+In summary, many EDA and CDA mechanisms are used to define smartphone dataset's features.
+
+## Load Library
+
+```{r, warning=FALSE, message=FALSE}
+library(ggplot2)
+library(tidyr)
+library(dplyr)
+library(e1071)
+library(mice)
+library(VIM)
+library(tibble)
+library(gridExtra)
+library(bestNormalize)
+library(corrplot)
+library(ggcorrplot)
+library(quantreg)
+library(ggmosaic)
+library(caret)
+library(car)
+library(pROC)
+library(gam)
+library(MLmetrics)
+library(nnet)
+library(psych)
+library(ltm)
+library(ggridges)
+library(patchwork)
+library(GGally)
+library(stringr)
+library(glmnet)
+
+options(scipen = 999) #turn off scientific notation
+
+```
+
+```{r, warning=FALSE, message=FALSE}
+
+library(dplyr)
+select <- dplyr::select
+rename <- dplyr::rename
+
+```
+
+```{r, warning=FALSE, message=FALSE}
+#First load the data
+setwd("/Users/gozdenurozdemir/Desktop/Final")
+data<-read.csv("smartphones.csv")
+dim(data)
+str(data)
+```
+
+## Variables Interpretation
+
+brand_name: There are 980 entries in our dataset.
+Represents the brand name of the phone.
+
+model: Represents models for each phone.
+
+price: It is numeric.
+
+avg_rating: The average score for a phone based on users or reviewers.
+
+
+X5G_or_not: It is a numeric variable, we need to convert it to a factor variable.
+
+processor_brand: It is a character.
+It indicates the brand of the processor.
+
+num_cores: It is numeric, which has 4, 6, and 8.
+However, we need to convert it to a factor variable.
+
+processor_speed: It is numeric.
+
+battery_capacity: It represents battery size.
+
+fast_charging_available: It is an integer, we need to change it to a factor variable.
+
+fast_charging: It is integer.
+
+ram_capacity: Numeric variable indicating RAM capacity.
+
+internal_memory: It is numeric, we need to change it into the factor variable.
+
+
+screen_size: It is numeric.
+
+refresh_rate: It shows us the screen refresh rate in Hz.
+
+extended_memory_available: We need to change to factor for our analysis.
+
+num_rear_cameras: It is integer.
+This is a discrete categorical variable, so we need to convert it into the factor variable.
+
+primary_camera_rear: Resolution of the primary rear camera in megapixels.
+It is numeric.
+
+
+primary_camera_front: It is integer.
+
+resolution_height: It is integer.
+
+resolution_width: It is integer.
+
+os: It is a character.
+
+## Making Tidy Dataset
+
+Converting some variables into factor variables:
+
+```{r}
+# Convert binary variables to factors 
+data$X5G_or_not <- factor(data$X5G_or_not, levels = c(0, 1), labels = c("No", "Yes"))
+data$fast_charging_available <- factor(data$fast_charging_available, levels = c(0, 1), labels = c("No", "Yes"))
+data$extended_memory_available <- factor(data$extended_memory_available, levels = c(0, 1), labels = c("No", "Yes"))
+data$primary_camera_rear <- as.numeric(data$primary_camera_rear)
+data$primary_camera_front <- as.numeric(data$primary_camera_front)
+
+# Convert categorical variables into factors 
+data$num_cores <- factor(data$num_cores)
+data$num_rear_cameras <- factor(data$num_rear_cameras)
+data$internal_memory <- factor(data$internal_memory)
+
+
+
+
+data$log_price<-log(data$price)
+# Check
+str(data)
+data_mis<-data
+summary(data)
+
+```
+
+To see the distribution of numeric variables.
+
+```{r histograms, fig.width = 14, fig.height = 10, warning = FALSE, message = FALSE}
+
+library(ggplot2)
+library(gridExtra)
+library(patchwork)
+
+
+hist_vars <- c("log_price", "avg_rating", "processor_speed", "battery_capacity",
+               "screen_size", "resolution_height", "resolution_width",
+               "fast_charging", "primary_camera_rear", "primary_camera_front")
+
+
+bar_vars <- c("ram_capacity", "refresh_rate")
+
+
+
+title_dict <- list(
+  log_price = "Price",
+  avg_rating = "Average Rating",
+  processor_speed = "Processor Speed",
+  battery_capacity = "Battery Capacity",
+  screen_size = "Screen Size",
+  resolution_height = "Resolution Height",
+  resolution_width = "Resolution Width",
+  fast_charging = "Fast Charging Speed",
+  primary_camera_rear = "Primary Camera (Rear)",
+  primary_camera_front = "Primary Camera (Front)",
+  ram_capacity = "RAM Capacity",
+  refresh_rate = "Refresh Rate"
+)
+
+
+plots_hist <- list()
+plots_bar <- list()
+
+
+for (var in hist_vars) {
+  p <- ggplot(data, aes_string(x = var)) +
+    geom_histogram(fill = "steelblue", color = "black", na.rm = TRUE, bins = 20) +
+    labs(title = title_dict[[var]], x = "Value", y = "Frequency") +
+    theme_minimal(base_size = 13) +
+    theme(
+      plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
+      axis.text.x = element_text(angle = 45, hjust = 1, size = 10),
+      axis.text.y = element_text(size = 10)
+    )
+  plots_hist[[var]] <- p
+}
+
+
+for (var in bar_vars) {
+  p <- ggplot(data, aes_string(x = paste0("factor(", var, ")"))) +
+    geom_bar(fill = "lightblue", color = "black", na.rm = TRUE) +
+    labs(title = title_dict[[var]] , x = "Value", y = "Count") +
+    theme_minimal(base_size = 11) +
+    theme(
+      plot.title = element_text(hjust = 0.5, face = "bold"),
+      axis.text.x = element_text(angle = 45, hjust = 1, size = 8)
+    )
+  plots_bar[[var]] <- p
+}
+
+
+wrap_plots(plots_hist, ncol = 3) +
+  plot_annotation(
+    theme = theme(plot.title = element_text(size = 16, face = "bold", hjust = 0.5))
+  )
+
+
+wrap_plots(plots_bar, ncol = 2) +
+  plot_annotation(
+    theme = theme(plot.title = element_text(size = 16, face = "bold", hjust = 0.5))
+  )
+```
+
+Average Rating: Datum is centered around 6 and 9, which is mainly centered around 8.
+
+
+Battery Capacity: It is mostly around 5000.
+
+Fast Charging: Distribution is rightly skewed.
+It has few high values.
+
+
+Primary Camera (Front): Most observations are concentrated around 5 and 20.
+There are few values that are bigger than 40.
+
+Primary Camera (Rear): Mainly values between 40 and 80.
+There are a few cases which are bigger than 100.
+
+
+Processor Speed: It seems multimodal.
+
+RAM Capacity: Mostly, around 3 and 8.
+Some values are greater than 12.
+
+Refresh Rate: Mainly around 60 and 120.
+However, some devices exceed 144 Hz.
+
+Resolution Height: It is mainly around 2000 and 2500.
+
+Resolution Width: Most values are clustered between 700 and 1500 pixels.
+
+Screen Size: It is concentrated around 6 and 7.
+
+
+
+```{r, fig.width = 14, fig.height = 12}
+
+library(GGally)
+library(ggplot2)
+library(dplyr)
+
+selected_vars <- data[, c("log_price", "processor_speed", "ram_capacity",
+                          "avg_rating", "battery_capacity", "screen_size",
+                          "resolution_height", "resolution_width")]
+
+colnames(selected_vars) <- c("Log Price", "Processor Speed", "RAM Capacity",
+                             "Avg Rating", "Battery Capacity", "Screen Size",
+                             "Resolution Height", "Resolution Width")
+
+ggpairs(
+  selected_vars,
+  upper = list(continuous = wrap("cor", size = 4, color = "black")),
+  lower = list(continuous = wrap("points", alpha = 0.7, size = 1.5, color = "#1f77b4")),
+  diag = list(continuous = wrap("densityDiag", fill = "#cce5ff")),
+  title = "Scatter Plot Matrix of Selected Smartphone Features"
+) +
+  theme_minimal(base_size = 14)
+
+
+```
+The scatter plot matrix visualizes the pairwise relationships between numerical features. For this plot we did not use all features, we used some selected features based on their correlation strength. There is a strong and approximately linear relationship between log price and several features such as processor speed (r = 0.78), RAM capacity (r = 0.68), and average rating (r = 0.66). Also, there is a relationship between average rating and resolution height (r= 0.668).  
+
+# EDA PART
+
+## Is there significant multicollinearity  among smartphone features?
+
+```{r ggpairs-group1, fig.width=16, fig.height=14, warning=FALSE, message=FALSE}
+library(ggplot2)
+library(reshape2)
+library(dplyr)
+
+numeric_data <- data %>% select(where(is.numeric))
+numeric_data$price <- NULL
+numeric_data$primary_camera_rear <- NULL
+
+corr_matrix <- cor(numeric_data, method = "spearman", use = "complete.obs")
+corr_matrix[lower.tri(corr_matrix)] <- NA
+
+melted_corr <- melt(corr_matrix, na.rm = TRUE)
+
+# Plot
+ggplot(melted_corr, aes(x = Var2, y = Var1, fill = value)) +
+  geom_tile(color = "white") +
+  geom_text(aes(label = round(value, 2)), size = 3.5, color = "black") +
+  scale_fill_gradient2(low = "#b2182b", mid = "white", high = "#2166ac",
+                       midpoint = 0, limit = c(-1, 1),
+                       name = "Spearman\nCorrelation") +
+  theme_minimal(base_size = 12) +
+  theme(
+    axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1),
+    axis.text = element_text(color = "black"),
+    panel.grid = element_blank()
+  ) +
+  coord_fixed() +
+  xlab("") +  
+  ylab("") +
+  ggtitle("Spearman Correlation Heatmap")
+
+
+```
+
+
+The variables in this analysis are numeric, but not all are truly continuous.
+For this reason, testing normality or linearity does not make sense.
+Therefore, we used Spearman correlation.
+
+Price is strongly related to average rating (0.88), and RAM (0.77).
+Thus, it can be said that higher-priced phones tend to have higher average ratings and better technical specifications.
+
+
+Average rating shows a strong positive relationship with RAM (0.83) and processor speed (0.69).
+
+
+## Do devices with higher number of cores (4, 6, 8) tend to support 5G more frequently?
+
+```{r, warning=FALSE, message=FALSE}
+
+data$X5G_or_not <- factor(data$X5G_or_not, levels = c("No", "Yes", NA))
+data$num_cores <- as.factor(data$num_cores)
+
+ggplot(data, aes(x = X5G_or_not, fill = num_cores)) +
+  geom_bar(position = "fill", na.rm = FALSE, colour = "white") +
+  scale_y_continuous(labels = scales::percent_format()) +
+  scale_fill_manual(
+    values = c(
+      "4" = "#F4D03F",   
+      "6" = "#5DADE2",   
+      "8" = "#45B39D",   
+      "NA" = "#A9A9A9"   
+    ),
+    na.value = "#A9A9A9",
+    name = "Number of Cores"
+  ) +
+  labs(
+    title = "5G Support Distribution by Number of Cores",
+    x = "5G Support",
+    y = "Proportion"
+  ) +
+  theme_minimal()
+
+```
+
+The stacked bar chart shows us the relationship between the number of cores and 5G (yes/no).
+Phones with more cores tend to support 5G more frequently than those with fewer cores.
+Because when we look at the chart, we can see that devices with 8 cores are more 5G-Yes.
+
+However, there is no 5G support for 4-core devices.
+There are a few missing (NA) values, but their proportion is negligible.
+
+So, there is a relation between the number of cores and 5G functionality.
+For further analysis we conducted fisher's exact test in CDA part.
+
+## Are there any significant effect between categorical variables and average rating?
+
+```{r, warning=FALSE, message=FALSE}
+
+data$internal_memory <- as.character(data$internal_memory)
+data$internal_memory[is.na(data$internal_memory)] <- "Missing"
+
+
+internal_levels <- c("16", "32", "64", "128", "256", "512", "1024", "Missing")
+data$internal_memory <- factor(data$internal_memory, levels = internal_levels, ordered = TRUE)
+
+
+data <- data %>%
+  mutate(across(c(X5G_or_not, fast_charging_available, num_rear_cameras), as.character))
+
+
+plot_feature <- function(data, feature_name, xlab = NULL) {
+  ggplot(data, aes_string(x = feature_name, y = "avg_rating", fill = feature_name)) +
+    geom_violin(alpha = 0.4) +
+    geom_boxplot(width = 0.2, outlier.shape = NA, fill = "white") +
+    theme_bw() +
+    labs(
+      x = xlab %||% feature_name,
+      y = "Average Rating"
+    ) +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1),
+          legend.position = "none")
+}
+
+
+p1 <- plot_feature(data, "X5G_or_not", "5G Availability")
+p3 <- plot_feature(data, "fast_charging_available", "Fast Charging")
+p4 <- plot_feature(data, "internal_memory", "Internal Memory")
+p5 <- plot_feature(data, "num_rear_cameras", "Rear Cameras")
+
+
+final_plot <- (p1 | p3) / (p4 | p5)
+final_plot
+
+```
+
+Phones with 5G support have higher average ratings compared to those without.
+5G-No category showed more variability than 5G-Yes category.
+Therefore, when a smartphone has 5G capabilities, users tend to give it higher ratings. It shows relatively consistent average ratings between groups, with centered distributions. The Yes group has a right-skewed but more compact distribution centered around 8.5.
+
+Phones with fast charging capabilities are rated much higher.
+So, it is an important feature for average rating. 
+
+Higher internal memory devices have higher ratings, such as 1024, 512, and 256 have higher ratings.
+Low internal memory categories, such as 32 and 64, show lower ratings.
+The "NA" category in internal memory appears empty due to missing average rating values for those entries.
+Also, we have missing values for average rating in the 16 internal memory case. Memory size of 64 and 128 show wider variation.
+
+As the number of rear cameras increases, the average rating also increases. The shape becomes more skewed or biomodal in higher categories. The rating distributions for devices with 2 and 3 rear cameras are wider compared to those with 1 or 4 cameras.
+
+
+
+
+## Is there a difference in refresh rate between smartphones with low and high RAM capacities?
+
+```{r, warning=FALSE, message=FALSE}
+library(ggplot2)
+
+ggplot(data, aes(x = ram_capacity, y = refresh_rate)) +
+  geom_jitter(
+    width = 5,     
+    height = 17,      
+    alpha = 0.6,
+    color = "black",
+    size = 1.2
+  ) +
+  geom_smooth(
+    method = "loess",
+    color = "#0072B2",
+    fill = "#0072B2",
+    linewidth = 1.2,
+    se = TRUE
+  ) +
+  labs(
+    x = "RAM Capacity (GB)",
+    y = "Refresh Rate (Hz)",
+    title = "Refresh Rate vs RAM Capacity"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(size = 17, face = "bold", hjust = 0.5),
+    axis.title = element_text(face = "bold"),
+    panel.grid.minor = element_blank(),
+    panel.grid.major = element_line(color = "grey80")
+  )
+
+
+```
+
+When we looked at the refresh rate vs RAM capacity plot, we can see that when the RAM capacity increases, refresh rates also tend to increase.
+This suggests that phones with higher RAM capacities are more likely to have a higher refresh rate.
+
+```{r}
+# Create RAM groups
+data$refresh_rate <- as.numeric(as.character(data$refresh_rate))
+
+median_ram <- median(data$ram_capacity, na.rm = TRUE)
+data$ram_group <- ifelse(data$ram_capacity <= median_ram, "Low RAM", "High RAM")
+
+ggplot(data, aes(x = refresh_rate, color = ram_group, fill = ram_group)) +
+  geom_density(alpha = 0.4, adjust = 1.2) +
+  labs(x = "Refresh Rate (Hz)", y = "Density", title = "Refresh Rate Distribution by RAM Group") +
+  theme_minimal()
+
+```
+
+As devices with higher RAM move to the right, they also have higher refresh rates.
+To be sure, the Wilcoxon test is conducted in the CDA part.
+
+## Is there a difference in refresh rate between smartphones with small and large screen areas?
+
+```{r}
+
+data$screen_area <- data$resolution_height * data$resolution_width
+ggplot(data, aes(x = screen_area, y = refresh_rate)) +
+  geom_point(
+    position = position_jitter(width = 700000, height = 14),
+    alpha = 0.35,
+    color = "black",
+    size = 1
+  ) +
+  geom_smooth(
+    method = "loess",
+    formula = y ~ x,
+    color = "#D55E00",
+    fill = "#D55E00",
+    linewidth = 1.2,
+    se = TRUE
+  ) +
+  labs(
+    x = "Screen Area (pixels)",
+    y = "Refresh Rate (Hz)",
+    title = "Larger Screens Tend to Have Higher Refresh Rates"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(size = 17, face = "bold", hjust = 0.5),
+    axis.title = element_text(face = "bold")
+  )
+
+
+```
+
+This analysis aims to determine whether phones with larger screen areas tend to have higher refresh rates or not compared to those smaller screens.
+Since we know that refresh rates are not normally distributed, we used a non-parametric method results were showed in CDA part.
+
+The plot shows us, there is a moderate positive relationship between the screen area and refresh rate.
+We can say that larger screen phones have a higher refresh rate, but this connection is less strong than the RAM case.
+To be sure, the Wilcoxon test is conducted in the CDA part.
+
+## Is there a significant relationship between binary features and extended memory?"
+
+```{r,fig.width=10, fig.height=6}
+
+library(patchwork)
+
+# 1. Fast Charging
+p1 <- ggplot(data, aes(x = fast_charging_available, fill = extended_memory_available)) +
+  geom_bar(position = "fill") +
+  labs(y = "Proportion", x="Fast Charging")
+
+# 2. 5G
+p2 <- ggplot(data, aes(x = X5G_or_not, fill = extended_memory_available)) +
+  geom_bar(position = "fill") +
+  labs(y = "Proportion",x="5G Availability")
+
+
+# Combine all plots
+(p1 | p2) 
+
+```
+
+A higher proportion has extended memory, yes, without a fast charging variable.
+5G no case has more extended memory than the extended memory yes case.
+
+# Missingness Mechanisim
+
+```{r}
+data_cleaned<-data
+missing_count <- sapply(data_cleaned, function(x) sum(is.na(x)))
+missing_summary_simple <- tibble(
+  Variable = names(missing_count),
+  Missing_Count = missing_count
+)
+
+# Calculate missing count
+missing_count <- sapply(data_cleaned, function(x) sum(is.na(x)))
+
+# Calculate missing percent
+missing_percent <- (missing_count / nrow(data_cleaned)) * 100
+
+# Create summary table
+missing_summary <- tibble(
+  Variable = names(missing_count),
+  Missing_Count = missing_count,
+  Missing_Percent = round(missing_percent, 2)
+)
+
+# Filter only variables with missing values and sort descending
+missing_summary_filtered <- missing_summary %>%
+  filter(Missing_Count > 0) %>%
+  arrange(desc(Missing_Count))
+
+# Show the result
+print(missing_summary_filtered)
+
+```
+
+fast charging has 211 missing values which equals 21.53% of our fast charging values.
+When we make imputations, we need to be careful.
+Average rating has 101 missing values, processor speed has 42 values,battery_capacity has 11 missing values,primary_camera front has 4 missing values, and number of cores has 6 missing values in our dataset.
+Other columns do not have any missing values, so we do not need to do any imputation for those.
+
+```{r}
+# Find variables with NA
+vars_with_na <- names(data_cleaned)[colSums(is.na(data_cleaned)) > 0]
+
+# Select only numeric and factor ones
+vars_with_na_valid <- vars_with_na[sapply(data_cleaned[vars_with_na], function(x) is.numeric(x) | is.factor(x))]
+
+
+aggr(data_cleaned[vars_with_na_valid],
+     numbers = TRUE, 
+     sortVars = TRUE,
+     cex.axis = 0.4,     
+     las = 2,            
+     gap = 2,           
+     ylab = c("Missing data", "Pattern"))
+
+```
+
+We see that the left side of the plot shows us the highest percentage of missing values' column which is fast charging.
+And then followed by average rating, process speed,battery capacity number of cores and etc.
+
+### Filling Missingness Value
+
+```{r, echo=TRUE, results='hide', message=FALSE, warning=FALSE}
+
+data_for_impute <- data_mis[, sapply(data_mis, function(x) is.numeric(x) | is.factor(x))]
+
+library(mice)
+init <- mice(data_for_impute, maxit = 0, printFlag = FALSE)
+methods <- init$method
+post <- init$post
+
+methods["primary_camera_front"] <- "cart"  
+post["primary_camera_front"] <- "imp[[j]][, i] <- pmax(0, imp[[j]][, i])"
+methods["fast_charging"] <- "cart"
+methods["battery_capacity"] <- "pmm"
+methods["avg_rating"] <- "pmm"
+
+imputed_data <- mice(data_for_impute, m = 10, seed = 123, method = methods, post = post)
+
+completed_data <- complete(imputed_data)
+
+```
+
+```{r}
+# Create each plot
+p1 <- densityplot(imputed_data, ~fast_charging, main = "Fast Charging")
+p2 <- densityplot(imputed_data, ~avg_rating, main = "Average Rating")
+p3 <- densityplot(imputed_data, ~primary_camera_front, main = "Primary Camera Front")
+p4 <- densityplot(imputed_data, ~num_cores, main = "Number of Cores")
+p5 <- densityplot(imputed_data, ~processor_speed, main = "Processor Speed")
+p6 <- densityplot(imputed_data, ~battery_capacity, main = "Battery Capacity")
+
+# Arrange them
+grid.arrange(p1, p2, p3, p4, p5, p6, ncol = 3)
+
+```
+
+For most variables (e.g., processor speed, average rating, and battery capacity), the density lines of imputed values are very similar to the lines for the original data.
+This indicates that the imputation process was successful.
+Although the lines for number of cores and primary camera front differ slightly from the originals, the difference is still acceptable.
+Since there are no extreme values or unrealistic imputations, we consider the method to be reliable.
+Therefore, we proceed with using the imputed dataset in further analysis.
+Next, we examined their summary statistics to see whether there are any noticeable differences between the original and imputed versions.
+
+```{r}
+summary(data_cleaned)
+
+```
+
+```{r}
+summary(completed_data)
+model_data<-completed_data
+
+```
+
+When we looked at differences between imputed and raw data, it was important to focus only on variables that originally contained missing values.
+Such as the price does not have any NA values so we do not need to look at differences between raw and imputed summation for this variable.
+Since there is no imputation, so there will be no change for this variable.
+However, average rating, fast charging, processor speed and battery capacity contain missing values so we need to see if there are any differences between raw and imputed summation differences.
+When we looked at it, we saw that there were no statistical differences between each variable's summary values like mean, median, and quartiles.
+So our estimates look good.
+We can use this new estimate.
+
+
+
+```{r}
+numeric_data_raw <- data_cleaned[, sapply(data_cleaned, is.numeric)]
+numeric_data_imputed <- completed_data[, sapply(completed_data, is.numeric)]
+
+# Corr matrix
+cor_raw <- cor(numeric_data_raw, use = "pairwise.complete.obs")
+cor_imputed <- cor(numeric_data_imputed, use = "pairwise.complete.obs")
+
+common_cols <- intersect(colnames(cor_raw), colnames(cor_imputed))
+cor_diff <- cor_imputed[common_cols, common_cols] - cor_raw[common_cols, common_cols]
+
+# summary
+summary(as.vector(cor_diff))
+
+
+```
+
+Based on the difference between raw and imputed datasets, the imputation seems acceptable.
+The majority of the correlation differences are zero or very close to zero.
+Even maximum difference is small, it is 0.11885.
+Therefore, we can say that imputed data is sufficiently consistent with the raw data and we can use it in our analysis from now on.
+
+```{r}
+# data preperation for ml part
+char_cols <- c("brand_name", "model", "processor_brand", "os")
+recovered_columns <- data_cleaned[char_cols]
+model_data2 <- cbind(model_data, recovered_columns)
+model_data2$log_price <- NULL
+
+write.csv(model_data2, "ml.csv", row.names = FALSE)
+
+```
+
+
+# CDA PART
+
+## Do devices with higher number of cores (4, 6, 8) tend to support 5G more frequently?
+
+```{r, echo=TRUE, message=FALSE, warning=FALSE}
+
+# We assume that each observation (i.e., smartphone) is independent,
+# since each row represents a unique device. Thus, the independence assumption 
+# for Fisher's Exact Test is considered satisfied.
+
+core_5g_table <- table(completed_data$num_cores, completed_data$X5G_or_not)
+
+fisher.test(core_5g_table, simulate.p.value = TRUE, B = 100000)
+
+
+```
+
+Since some expected frequencies in the contingency table are below 5, the assumptions of the chi-square test are violated. Therefore, Fisher's Exact Test is preferred as a more accurate method for this data. When we look at the fisher's exact test, we see that the p-value is less than 0.05. 
+So, we can confidently say that, there is a connection between the number of cores and 5G supports for our analysis.
+
+
+## Are there any significant effect between categorical variables and average rating?
+
+```{r, echo=TRUE, message=FALSE, warning=FALSE}
+# Each observation represents a unique smartphone, so independence is assumed.
+
+# Kruskal-Wallis and Mann-Whitney U tests for categorical variables
+#Label Encoding (0/1)
+test_data<-completed_data
+test_data$X5G_or_not <- ifelse(test_data$X5G_or_not == "Yes", 1, 0)
+test_data$fast_charging_available <- ifelse(test_data$fast_charging_available == "Yes", 1, 0)
+test_data$extended_memory_available <- ifelse(test_data$extended_memory_available == "Yes", 1, 0)
+
+shapiro.test(test_data$avg_rating)
+
+test_data$num_rear_cameras<-as.factor(test_data$num_rear_cameras)
+test_data$internal_memory<-as.factor(test_data$internal_memory)
+
+wilcox.test(avg_rating ~ X5G_or_not, data = test_data)
+wilcox.test(avg_rating ~ fast_charging_available, data = test_data)
+
+
+kruskal.test(avg_rating ~ internal_memory, data = test_data)
+kruskal.test(avg_rating ~ num_rear_cameras, data = test_data)
+
+
+```
+
+All comparison seems statistically significant since p values are smaller than 0.05.
+So, we can say that there are statistically significant differences in average rating depending on several features.
+
+Fast Charging availability and 5G availability are binary variables. For these variables, post-hoc testing is not needed. For the non-binary variables, we need to use post-hoc test.
+
+
+```{r}
+library(FSA)
+library(dplyr)
+
+
+group_vars <- c("internal_memory", "num_rear_cameras")
+
+
+test_data$internal_memory <- as.factor(test_data$internal_memory)
+test_data$num_rear_cameras <- as.factor(test_data$num_rear_cameras)
+test_data$avg_rating <- as.numeric(test_data$avg_rating)
+
+for (var in group_vars) {
+  formula <- reformulate(var, response = "avg_rating")
+  dunn_result <- dunnTest(formula, data = test_data, method = "none")
+  dunn_df <- as.data.frame(dunn_result$res)
+  dunn_df_cleaned <- dunn_df %>%
+    mutate(
+      Z = round(Z, 6),
+      P.unadj = round(P.unadj, 6),
+      P.adj = round(p.adjust(P.unadj, method = "fdr"), 6)
+    ) %>%
+    arrange(P.adj)
+  
+  print(paste0("Post-hoc result with FDR correction for variable: ", var))
+  print(dunn_df_cleaned)
+}
+
+```
+
+For example, comparisons like 128-64 or 256-64 had very low adjusted p-values indicating statistically significant differences in average rating between the memory size. However, 16-64 had an adjusted p-value of 1, indicting no significant difference between these two memory sizes.
+
+No significant differences was found between 3 vs 4. However, for the other comparisons for the number of rear cameras has a statistically significant effect on the average rating.
+
+
+
+### Is there a difference in refresh rate between smartphones with low and high RAM capacities?
+
+```{r, echo=TRUE, message=FALSE, warning=FALSE}
+
+# Create RAM groups
+median_ram <- median(completed_data$ram_capacity, na.rm = TRUE)
+completed_data$ram_group <- ifelse(completed_data$ram_capacity <= median_ram, "Low RAM", "High RAM")
+shapiro.test(completed_data$refresh_rate)
+
+#Since each observation corresponds to a different smartphone, the independence assumption of the Wilcoxon Rank-Sum test is considered satisfied.
+# Wilcoxon test for RAM groups
+wilcox.test(refresh_rate ~ ram_group, data = completed_data)
+
+
+tapply(completed_data$refresh_rate, completed_data$ram_group, median)
+
+```
+
+Non-parametric test was used since refresh rate is not normally distributed.
+The p-value is smaller than 0.05, so we can reject the null hypothesis.
+Therefore, we conclude that there is a statistically significant difference between refresh rate and low vs high RAM devices.
+
+According to the median values and the plots, we can say that high RAM phones have a significantly higher refresh rate than low RAM phones.
+
+
+
+## Is there a difference in refresh rate between smartphones with small and large screen areas?
+
+```{r, echo=TRUE, message=FALSE, warning=FALSE}
+
+# Calculate screen area
+completed_data$screen_area <- completed_data$resolution_height * completed_data$resolution_width
+
+# Create Screen Area groups
+median_screen_area <- median(completed_data$screen_area, na.rm = TRUE)
+completed_data$screen_group <- ifelse(completed_data$screen_area <= median_screen_area, "Small Screen", "Large Screen")
+
+shapiro.test(completed_data$refresh_rate)
+# Since each observation corresponds to a different smartphone, the independence assumption of the Wilcoxon Rank-Sum test is considered satisfied.
+
+# Wilcoxon test for Screen Area groups
+wilcox.test(refresh_rate ~ screen_group, data = completed_data)
+
+tapply(completed_data$refresh_rate, completed_data$screen_group, median)
+
+```
+
+The Shapiro-Wilk test showed that the refresh rates were not normally distributed.
+Therefore, a non-parametric Wilcoxon rank sum test is applied.
+This test shows us there is a statistically significant difference between refresh rate and screen size.
+When we looked at the median refresh rate result, phones with larger screens have higher refresh rates.
+
+
+## Is there a significant relationship between binary features and extended memory?
+
+
+```{r}
+
+# 1. Fast Charging vs Extended Memory
+print("Fast Charging")
+tab_fast <- table(completed_data$extended_memory_available, completed_data$fast_charging_available)
+print(tab_fast)
+
+expected_fast <- chisq.test(tab_fast)$expected
+print(expected_fast)
+
+if (any(expected_fast < 5)) {
+  print(fisher.test(tab_fast))
+} else {
+  print(chisq.test(tab_fast))
+}
+
+# 2. 5G vs Extended Memory
+print("5G")
+tab_5g <- table(completed_data$extended_memory_available, completed_data$X5G_or_not)
+print(tab_5g)
+
+expected_5g <- chisq.test(tab_5g)$expected
+print(expected_5g)
+
+# Fisher if small expected values in 2x2
+if (any(expected_5g < 5)) {
+  print(fisher.test(tab_5g))
+} else {
+  print(chisq.test(tab_5g))
+}
+
+# Observations are independent as each row is a unique smartphone.
+
+
+```
+
+To see the associations between extended memory and binary variables. Chi-squared was used.
+
+Fast Charging: There is a statistically significant association between fast charging availability and extended memory availability. Fast charging phones tend to have extended memory availability more.
+
+5G availability: A highly significant relationship exists between 5G support and extended memory availability. Interestingly, phones without extended memory were more likely to support 5G compared to those with extended memory.
+
+
+
+## What are the relationships between price and binary variable?
+
+### Encoding
+
+Encoding was applied only to binary variables since these are originally yes/no categories.
+We changed these into 1 and 0 to use later in the study.
+
+```{r}
+# Label Encoding (0/1)
+completed_data$X5G_or_not <- ifelse(completed_data$X5G_or_not == "Yes", 1, 0)
+completed_data$fast_charging_available <- ifelse(completed_data$fast_charging_available == "Yes", 1, 0)
+completed_data$extended_memory_available <- ifelse(completed_data$extended_memory_available == "Yes", 1, 0)
+
+```
+
+```{r, echo=TRUE, message=FALSE, warning=FALSE}
+
+# Price vs X5G
+wilcox.test(log_price ~ X5G_or_not, data = completed_data)
+
+# Price vs Extended Memory
+wilcox.test(log_price ~ extended_memory_available, data = completed_data)
+
+# Price vs Fast Charging
+wilcox.test(log_price ~ fast_charging_available, data = completed_data)
+
+```
+Since the log of price variable is not normally distributed, the Wilcoxon rank sum test was used to compare price differences between binary categories.
+The results indicate that there are statistically significant differences in smartphone prices based on: 5G availability, extended memory availability, and fast charging availability.
+
+
+```{r, warning=FALSE, message=FALSE}
+
+# Categoric feature labels
+completed_data$X5G <- factor(completed_data$X5G_or_not, labels = c("No", "Yes"))
+completed_data$ExtendedMemory <- factor(completed_data$extended_memory_available, labels = c("No", "Yes"))
+completed_data$FastCharging <- factor(completed_data$fast_charging_available, labels = c("No", "Yes"))
+
+# Long format
+data_long <- pivot_longer(
+  completed_data,
+  cols = c(X5G, ExtendedMemory, FastCharging),
+  names_to = "Feature",
+  values_to = "Availability"
+)
+
+
+# Density plot - overlapping
+ggplot(data_long, aes(x = log_price, fill = Availability)) +
+  geom_density(alpha = 0.9, color = "black") +
+  facet_wrap(~Feature, scales = "free") +
+  labs(
+    title = "Log Price Distribution by Feature and Availability",
+    x = "Log(Price + 1)",
+    y = "Density"
+  ) +
+  scale_fill_manual(values = c("lightpink", "lightblue")) +
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(size = 16, face = "bold", hjust = 0.5),
+    legend.title = element_blank()
+  )
+
+```
+
+There is a correlation between 5G capabilities and price; 5G phones are more expensive.
+Devices without extended memory are more likely to have a log of higher prices.
+Fast-charging phones are more expensive.
+
+# CROSS VALIDATION PART
+
+# Which smartphone characteristics significantly predict the availability of extended memory?
+
+First influential point detection:
+
+```{r}
+
+library(car)
+library(caret)
+library(dplyr)
+library(broom)
+library(ggplot2)
+
+full_model_data <- model_data
+
+model_full <- glm(extended_memory_available ~ ., data = full_model_data, family = binomial)
+
+
+cooks_d <- cooks.distance(model_full)
+hat_vals <- hatvalues(model_full)
+stud_res <- rstudent(model_full)
+
+
+n <- nrow(full_model_data)
+p <- length(coef(model_full))
+cooks_cutoff <- 4 / n
+hat_cutoff <- 2 * p / n
+resid_cutoff <- 2
+
+influential_points <- which(
+  cooks_d > cooks_cutoff |
+  hat_vals > hat_cutoff |
+  abs(stud_res) > resid_cutoff
+)
+
+cat("Influential Points Detected:", length(influential_points), "\n")
+print(influential_points)
+
+clean_data1 <- full_model_data[-influential_points, ]
+
+model_clean <- glm(extended_memory_available ~ ., data = clean_data1, family = binomial)
+
+pred_full <- ifelse(predict(model_full, type = "response") >= 0.5, "Yes", "No")
+pred_clean <- ifelse(predict(model_clean, type = "response") >= 0.5, "Yes", "No")
+
+actual_full <- factor(full_model_data$extended_memory_available, levels = c("No", "Yes"))
+actual_clean <- factor(clean_data1$extended_memory_available, levels = c("No", "Yes"))
+
+cat("\nFULL MODEL PERFORMANCE:\n")
+performance_full <- confusionMatrix(factor(pred_full, levels = c("No", "Yes")), actual_full, positive = "Yes")
+print(performance_full)
+
+cat("\nCLEAN MODEL PERFORMANCE (Influentials Removed):\n")
+performance_clean <- confusionMatrix(factor(pred_clean, levels = c("No", "Yes")), actual_clean, positive = "Yes")
+print(performance_clean)
+
+cat("\nCOEFFICIENTS COMPARISON:\n")
+coefs_full <- tidy(model_full) %>% mutate(Model = "Full")
+coefs_clean <- tidy(model_clean) %>% mutate(Model = "Reduced")
+combined_coefs <- bind_rows(coefs_full, coefs_clean)
+
+ggplot(combined_coefs, aes(x = estimate, y = term, color = Model)) +
+  geom_point(position = position_dodge(width = 0.5), size = 2.5) +
+  labs(title = "Coefficient Comparison: Full vs Reduced Model",
+       x = "Coefficient Estimate", y = "Variable") +
+  theme_minimal()
+
+# Final performance summary table
+performance_df <- data.frame(
+  Model = c("Full", "Reduced"),
+  Accuracy = c(performance_full$overall['Accuracy'], performance_clean$overall['Accuracy']),
+  Kappa = c(performance_full$overall['Kappa'], performance_clean$overall['Kappa']),
+  Sensitivity = c(performance_full$byClass['Sensitivity'], performance_clean$byClass['Sensitivity']),
+  Specificity = c(performance_full$byClass['Specificity'], performance_clean$byClass['Specificity']),
+  PPV = c(performance_full$byClass['Pos Pred Value'], performance_clean$byClass['Pos Pred Value']),
+  NPV = c(performance_full$byClass['Neg Pred Value'], performance_clean$byClass['Neg Pred Value']),
+  BalancedAccuracy = c(performance_full$byClass['Balanced Accuracy'], performance_clean$byClass['Balanced Accuracy'])
+)
+
+print(performance_df)
+
+
+
+```
+
+To detect influential observations, we used approach based on Belsley, Kuh, and Welsch (1980), who suggest that each diagnostic criterion (Cook’s Distance, leverage, and studentized residuals) measures different dimensions of influence. Therefore, if it exceeded at least one of the thresholds we flagged them and then we build a model with influential and without influential case and then we decided if this observations really influential or not.
+
+To detect influential points, first we fitted a logistic regression model to the full dataset. To detect influential points, we calculated cook's distance, hat values and studentized residuals. Later, we fitted logistic regresion again to reduced model (which does not contain influential points). The cleaned model showed improved performance: accuracy, kappa, sensitivity are increased. Therefore, removing influential points appears to enhance model robustness, so we used without influential data. 
+
+
+
+### Lasso Regression
+
+```{r, echo=TRUE, results='hide', message=FALSE, warning=FALSE}
+model_data<-clean_data1
+model_data$extended_memory_available <- ifelse(model_data$extended_memory_available == "Yes", 1, 0)
+model_data$X5G_or_not <- ifelse(model_data$X5G_or_not == "Yes", 1, 0)
+model_data$fast_charging_available <- ifelse(model_data$fast_charging_available == "Yes", 1, 0)
+
+#LASSO REG.
+Y <- as.numeric(model_data$extended_memory_available)
+X <- model_data %>% select(-extended_memory_available)
+
+
+X <- model.matrix(~ ., data = X)[, -1]
+
+# Lambda grid
+grid <- 10^seq(10, -4, length = 100)
+
+# Cross-validation 
+set.seed(412)
+cv.lasso <- cv.glmnet(X, Y, alpha = 1, family = "binomial", lambda = grid)
+
+best_lambda <- cv.lasso$lambda.min
+lasso_model <- glmnet(X, Y, alpha = 1, family = "binomial", lambda = best_lambda)
+
+```
+
+
+
+## Lasso Regression 
+```{r, warning=FALSE, message=FALSE}
+
+coef_lasso <- coef(lasso_model)
+nonzero_coefs <- coef_lasso[coef_lasso != 0]
+coef_lasso
+
+
+
+selected_vars <- c(
+  "price",
+  "avg_rating",
+  "X5G_or_not",
+  "num_cores",             
+  "processor_speed",
+  "battery_capacity",
+  "fast_charging_available",
+  "fast_charging",
+  "ram_capacity",
+  "internal_memory",       
+  "screen_size",
+  "refresh_rate",
+  "num_rear_cameras",       
+  "primary_camera_rear",
+  "primary_camera_front",
+  "resolution_height",
+  "resolution_width"
+)
+
+
+formula_text <- paste("extended_memory_available ~", paste(selected_vars, collapse = " + "))
+formula <- as.formula(formula_text)
+
+glm_selected <- glm(formula, data = model_data, family = binomial)
+
+
+```
+
+```{r}
+# remove unsignificant ones by looking at glm_selected
+glm_final <- glm(extended_memory_available ~ price + avg_rating + X5G_or_not +
+                   processor_speed + battery_capacity + fast_charging +
+                   ram_capacity + refresh_rate + primary_camera_front,
+                 data = model_data, family = binomial)
+
+
+summary(glm_final)
+
+```
+
+Then, we eliminate nonsignificant factors from the GLM model.
+In summary, after applying LASSO and removing insignificant ones, we obtained a final GLM model for our analysis.
+These variables are price, average rating, 5G, processor speed, battery capacity, fast charging, RAM, refresh rate, and primary camera front.
+Consequently, the final model consists of only the variables that are both statistically significant and conceptually meaningful.
+
+
+### Assumption Check
+
+```{r}
+# look vif values
+library(car)
+vif(glm_final)
+```
+
+All VIF values are below 5, so there is no multicollinearity issue in our model anymore.
+
+```{r}
+# Diagnostic Plots for glm_final 
+par(mfrow = c(3, 1), mar = c(4, 4, 2, 1))
+
+
+pearson_resid <- residuals(glm_final, type = "pearson")
+hist(
+  pearson_resid,
+  breaks = 30,
+  main = "Pearson Residuals",
+  xlab = "Residual",
+  col = "lightblue"
+)
+
+
+cooks <- cooks.distance(glm_final)
+cooks_cutoff <- 4 / length(cooks)
+
+plot(
+  cooks,
+  type = "h",
+  main = "Cook's Distance",
+  ylab = "Cook's D",
+  xlab = "Index",
+  col = "darkred",
+  ylim = c(0, max(0.01, 3*max(cooks)))  
+)
+abline(h = cooks_cutoff, col = "blue", lty = 2)
+
+
+leverage <- hatvalues(glm_final)
+leverage_cutoff <- 2 * mean(leverage)
+
+plot(
+  leverage,
+  type = "h",
+  main = "Leverage (Hat Values)",
+  ylab = "Leverage",
+  xlab = "Index",
+  col = "darkgreen",
+  ylim = c(0, max(0.05, 2*max(leverage))) 
+)
+abline(h = leverage_cutoff, col = "blue", lty = 2)
+
+par(mfrow = c(1, 1))
+
+
+
+```
+
+The graphs show that the overall model fit is good.
+The Pearson residuals are mostly clustered around zero, indicating a good model fit.
+Cook's distance values are generally low.
+However, a few points show larger distances.
+But since these are smaller than 1, it did not create any difference.
+Leverage mostly remains low, only a few of them bigger than zero, but they do not create any problem.
+
+```{r}
+continuous_vars <- c("price", "avg_rating", "processor_speed", "battery_capacity",
+                     "fast_charging", "ram_capacity", "refresh_rate", "primary_camera_front")
+
+
+glm_probs <- predict(glm_final, type = "link")  
+
+
+par(mfrow = c(3, 3))  
+
+for (var in continuous_vars) {
+  x <- model_data[[var]]
+  plot(x, glm_probs,
+       main = paste("Logit vs", var),
+       xlab = var, ylab = "Logit(P)", pch = 20, col = "darkgray")
+  lines(lowess(x, glm_probs), col = "blue", lwd = 2)
+}
+
+par(mfrow = c(1, 1))  
+
+```
+
+Most continuous predictors satisfy the linearity-in-the-logit assumption reasonably well.
+Just a few fast-charging and price points look a little non-linear.
+But it didn't create any problem.
+So, we can say that linearity assumption is satisfied.
+
+```{r}
+model_data$extended_memory_available <- factor(model_data$extended_memory_available, levels = c(0, 1), labels = c("No", "Yes"))
+model_data$X5G_or_not <- factor(model_data$X5G_or_not, levels = c(0, 1), labels = c("No", "Yes"))
+model_data$fast_charging_available <- factor(model_data$fast_charging_available, levels = c(0, 1), labels = c("No", "Yes"))
+
+
+predicted_prob_full <- predict(glm_final, type = "response")
+predicted_class_full <- ifelse(predicted_prob_full >= 0.5, "Yes", "No")
+predicted_class_full <- factor(predicted_class_full, levels = c("No", "Yes"))
+actual_class <- factor(model_data$extended_memory_available, levels = c("No", "Yes"))
+
+confusionMatrix(predicted_class_full, actual_class, positive = "Yes")
+
+```
+
+Accuracy is 0.96%, which means that 96% of all predictions were correct.
+Moreover, NIR is smaller than accuracy, which indicates that our model is good.
+
+Sensitivity is 97.6%, and our model correctly identifies positive cases 97.6% of the time.
+
+Specificity is 94.2%, which means that our model correctly identifies negative cases 94.2% of the time.
+
+The positive predictive value is 97%.
+When the model predicts yes, it is correct 97% of the time.
+
+The negative predictive value is 95% when the model predicts no, it is correct about 95% of the time.
+
+Balanced accuracy and kappa also look good.
+So, overall, our model's performance is good.
+
+Although there is a moderate imbalance between "Yes" and "No" classes (about 64% vs 36%), the model performs well for both classes.
+Sensitivity and specificity are balanced and high (92% and 94%, respectively), indicating that the model successfully handles the moderate class imbalance without major performance issues.
+
+In summary, in the EDA and CDA parts, we try to find which phone features significantly predict the availability of extended memory.
+In this case, the target is extended_memory_available, which is binary (yes/no).
+Since it is a binary variable, we used a GLM model of the binomial family.
+At first, we fit the full model, then for the reduced model, we got only significantly important and non-related variables as predictors.
+
+While the reduced model seems good, we looked at the confusion matrix, VIF values, and so on.
+However, it is critical to validate this model with new/unseen data cases.
+For this, we decided to use the cross-validation technique.
+In particular, we used K-fold cross-validation since it works well for GLM.
+
+```{r, message=FALSE, warning=FALSE}
+
+formula_reduced <- extended_memory_available~price+avg_rating+X5G_or_not+processor_speed+battery_capacity+fast_charging+ram_capacity+refresh_rate+primary_camera_front
+
+set.seed(123)  
+random_index <- createDataPartition(model_data$extended_memory_available, p = 0.8, list = FALSE)
+train_data <- model_data[random_index, ]
+test_data <- model_data[-random_index, ]
+
+model_train <- glm(formula_reduced, data = train_data, family = "binomial")
+
+# Train prediction
+train_pred <- ifelse(predict(model_train, type = "response") > 0.5, "Yes", "No")
+mean(train_pred == train_data$extended_memory_available)
+
+# Test prediction
+test_pred <- ifelse(predict(model_train, newdata = test_data, type = "response") > 0.5, "Yes", "No")
+mean(test_pred == test_data$extended_memory_available)  
+
+
+```
+
+We used train and test set appraoch. by splitting 0.8.
+
+```{r}
+
+continuous_vars <- model_data %>%
+  select(log_price, avg_rating, processor_speed, battery_capacity, 
+         fast_charging, ram_capacity, refresh_rate, primary_camera_front, extended_memory_available)
+
+
+continuous_vars$extended_memory_available <- as.factor(continuous_vars$extended_memory_available)
+
+
+long_data <- pivot_longer(continuous_vars, 
+                          cols = -extended_memory_available, 
+                          names_to = "Variable", 
+                          values_to = "Value")
+
+
+ggplot(long_data, aes(x = Value, fill = extended_memory_available)) +
+  geom_density(alpha = 0.6) +
+  facet_wrap(~ Variable, scales = "free", ncol = 3) +
+  labs(title = "Density Plots of Variables by Extended Memory Available",
+       x = "Value",
+       y = "Density",
+       fill = "Extended Memory") +
+  theme_minimal()
+
+```
+
+Devices with extended memory No have higher average ratings than extended memory Yes case.
+Battery capacity seem similar for both cases.
+Devices with extended memory tend to have lower fast charging.
+Processor speed for extended memory No case is higher than Yes case.
+
+
+
+```{r}
+library(caret)
+
+# Train prediction (convert to factor)
+train_pred <- ifelse(predict(model_train, type = "response") > 0.5, "Yes", "No")
+train_actual <- as.character(train_data$extended_memory_available)
+train_cm <- confusionMatrix(factor(train_pred, levels = c("No", "Yes")),
+                            factor(train_actual, levels = c("No", "Yes")),
+                            positive = "Yes")
+print(train_cm)
+
+# Test prediction (convert to factor)
+test_pred <- ifelse(predict(model_train, newdata = test_data, type = "response") > 0.5, "Yes", "No")
+test_actual <- as.character(test_data$extended_memory_available)
+test_cm <- confusionMatrix(factor(test_pred, levels = c("No", "Yes")),
+                           factor(test_actual, levels = c("No", "Yes")),
+                           positive = "Yes")
+print(test_cm)
+
+
+
+```
+Model performs well on the training data. High sensitivity, specificity and accuracy. Also, test performance is good. The model shows no signs of overfitting or underfitting. The performance metrics such as accuracy, sensitivity, specificty, and accuracy are consistently high for both train and test sets. So, model generalizes well to unseen data.
+
+### ROC Curve
+
+```{r}
+
+library(pROC)
+pred_probs_red <- predict(model_train, newdata = test_data, type = "response")
+test_actual <- test_data$extended_memory_available
+
+test_roc <- roc(test_actual ~ pred_probs_red, plot = TRUE, col = "blue", main = "ROC Curve for Logistic Regression")
+
+# Cutoff
+opt_cutoff <- coords(test_roc, "best", ret = "threshold")
+cutoff_text <- paste("Optimal Cutoff:", round(opt_cutoff, 4))
+text(x = 0.1, y = 0.1, labels = cutoff_text, font = 2, cex = 1.4)
+
+
+
+```
+
+The area under the curve seems close to 1, so our model well classifies. The optimal cutoff point was 0.3912.
+
+# ANN for Visualization
+
+```{r}
+library(ggplot2)
+library(dplyr)
+library(neuralnet)
+
+ df <- read.csv("ml.csv")
+
+df$fast_charging_available <- ifelse(df$fast_charging_available == "Yes", 1, 0)
+df$X5G_or_not <- ifelse(df$X5G_or_not == "Yes", 1, 0)
+df$extended_memory_available <- ifelse(df$extended_memory_available == "Yes", 1, 0)
+
+df_scaled <- as.data.frame(scale(df[, c(
+  "price", "avg_rating", "X5G_or_not", "processor_speed", "battery_capacity",
+  "fast_charging_available", "ram_capacity", "refresh_rate", "primary_camera_front"
+)]))
+
+df_scaled$extended_memory_available <- df$extended_memory_available
+
+
+f <- as.formula("extended_memory_available ~ price + avg_rating + X5G_or_not + processor_speed + battery_capacity + fast_charging_available + ram_capacity + refresh_rate + primary_camera_front")
+
+
+# Best Params: hidden=(16,), activation=relu, dropout=0.1, batch_size=16 -> approximation from python
+library(NeuralNetTools)
+nn_model <- neuralnet(f,
+                      data = df_scaled,
+                      hidden = 16,
+                      linear.output = FALSE,
+                      stepmax = 1e6)
+
+plot(nn_model, rep = "best", cex = 0.6, radius = 0.15, fontsize = 12)
+
+
+```
+
