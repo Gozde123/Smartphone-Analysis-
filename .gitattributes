@@ -1,2 +1,16 @@
-*.R linguist-language=R
+# Python dosyaları
 *.py linguist-language=Python
+
+# R dosyaları
+*.R linguist-language=R
+*.r linguist-language=R
+
+# Jupyter Notebook dosyaları
+*.ipynb linguist-language=Jupyter Notebook
+
+# Veri dosyaları yanlış algılanmasın diye
+*.csv linguist-detectable=false
+*.tsv linguist-detectable=false
+*.json linguist-detectable=false
+*.html linguist-detectable=false
+
